@@ -14,9 +14,7 @@ const PORT = process.env.PORT || 3000;
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'troca-isso-agora';
 
 // ── banco em memória ───────────────────────────────────────────
-// { key, status, expiresAt (ms), hwid, createdAt }
 const DB = [
-  // keys de exemplo — remove em produção
   {
     key:       'GHOST-DEMO-0000-TEST',
     status:    'active',
@@ -88,6 +86,32 @@ app.post('/api/validate', (req, res) => {
   });
 });
 
+// --- ROTAS FALSAS PRA ENGANAR O REMOTE ANDROID ---
+
+app.all('/remote-android/device.php', (req, res) => {
+    console.log("Bateu no device.php");
+    res.json({ 
+        success: true, 
+        status: 'active', 
+        message: 'Device OK',
+        sessionToken: 'fake_token_123' 
+    });
+});
+
+app.all('/api/android/sid_issue', (req, res) => {
+    console.log("Bateu no sid_issue");
+    res.json({ 
+        success: true, 
+        sid: 'fake_sid_999',
+        message: 'SID Gerado'
+    });
+});
+
+app.all('/remote_blob', (req, res) => {
+    console.log("Bateu no remote_blob");
+    res.send("{}"); 
+});
+
 // ── POST /api/download ─────────────────────────────────────────
 app.post('/api/download', (req, res) => {
   const { key } = req.body;
@@ -104,18 +128,14 @@ app.post('/api/download', (req, res) => {
 });
 
 // ── POST /api/generate (admin) ─────────────────────────────────
-// body: { adminToken, expiresInDays? }
-// resp: { success, key, expiresAt }
 app.post('/api/generate', requireAdmin, (req, res) => {
   const { expiresInDays } = req.body;
 
-  // validade padrão: 30 dias; 0 ou negativo = nunca expira
   const days = parseInt(expiresInDays) || 30;
   const expiresAt = days > 0
     ? Date.now() + days * 24 * 60 * 60 * 1000
     : 9999999999999;
 
-  // garante unicidade (colisão improvável mas tratada)
   let newKey;
   do { newKey = generateKey(); } while (findKey(newKey));
 
@@ -132,13 +152,11 @@ app.post('/api/generate', requireAdmin, (req, res) => {
 });
 
 // ── GET /api/admin/keys (admin) ────────────────────────────────
-// lista todas as keys — protegida
 app.get('/api/admin/keys', requireAdmin, (_req, res) => {
   return res.json({ success: true, keys: DB });
 });
 
 // ── POST /api/admin/revoke (admin) ────────────────────────────
-// body: { adminToken, key }
 app.post('/api/admin/revoke', requireAdmin, (req, res) => {
   const { key } = req.body;
   const record = findKey(key);
