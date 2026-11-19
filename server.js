@@ -88,25 +88,31 @@ app.post('/api/validate', (req, res) => {
 
 // --- ROTAS FALSAS PRA ENGANAR O REMOTE ANDROID ---
 
+// 1. O app pede o device.php
 app.all('/remote-android/device.php', (req, res) => {
     console.log("Bateu no device.php");
     res.json({ 
         success: true, 
         status: 'active', 
-        message: 'Device OK',
-        sessionToken: 'fake_token_123' 
+        message: 'OK',
+        sessionToken: 'fake_token_123',
+        key: req.body.key || 'GHOST-DEMO-0000-TEST',
+        expiresAt: 9999999999999
     });
 });
 
+// 2. O app pede o sid_issue
 app.all('/api/android/sid_issue', (req, res) => {
     console.log("Bateu no sid_issue");
     res.json({ 
         success: true, 
         sid: 'fake_sid_999',
-        message: 'SID Gerado'
+        message: 'SID Gerado',
+        expiresAt: 9999999999999
     });
 });
 
+// 3. O app pede o remote_blob (o injetor)
 app.all('/remote_blob', (req, res) => {
     console.log("Bateu no remote_blob");
     res.send("{}"); 
